@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Releases - SBL System{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h3 class="mb-0">Releases</h3>
+  {% if current_user['role'] in ['Admin','Manager'] %}
+  <a href="{{ url_for('releases.new_release') }}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> New Release</a>
+  {% endif %}
+</div>
+<div class="card sbl-card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead class="table-light"><tr><th>Version</th><th>Project</th><th>Type</th><th>Status</th><th>Created</th></tr></thead>
+      <tbody>
+        {% for r in releases %}
+        <tr onclick="window.location='{{ url_for('releases.detail', release_id=r['id']) }}'" style="cursor:pointer">
+          <td>{{ r['version_number'] }}</td>
+          <td>{{ r['project_name'] }}</td>
+          <td>{{ r['release_type'] }}</td>
+          <td><span class="badge bg-secondary">{{ r['status'] }}</span></td>
+          <td>{{ r['created_at'] }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="text-center text-muted py-3">No releases yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

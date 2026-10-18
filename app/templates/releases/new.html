@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}New Release - SBL System{% endblock %}
+{% block content %}
+<h3 class="mb-4">New Release</h3>
+<div class="card sbl-card p-4" style="max-width: 700px;">
+  <form method="post">
+    <div class="mb-3">
+      <label class="form-label">Project</label>
+      <select name="project_id" class="form-select" required>
+        <option value="" disabled selected>Select project...</option>
+        {% for p in projects %}<option value="{{ p['id'] }}">{{ p['name'] }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Version Number</label>
+      <input type="text" name="version_number" class="form-control" placeholder="e.g. v1.2.0" required>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Release Type</label>
+      <select name="release_type" class="form-select">
+        {% for t in types %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Release Notes</label>
+      <textarea name="release_notes" class="form-control" rows="3"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Create Release</button>
+  </form>
+</div>
+{% endblock %}

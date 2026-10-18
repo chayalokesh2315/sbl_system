@@ -1,0 +1,11 @@
+Flask>=3.0
+Werkzeug>=3.0
+
+# Optional, for production MySQL deployment (see README):
+# PyMySQL>=1.1
+# Flask-SQLAlchemy>=3.1
+
+# Optional, for spec-compliant QR codes (falls back to a built-in
+# pattern generator automatically if not installed):
+# qrcode>=7.4
+# Pillow>=10.0

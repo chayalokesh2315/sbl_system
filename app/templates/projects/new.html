@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}New Project - SBL System{% endblock %}
+{% block content %}
+<h3 class="mb-4">New Project</h3>
+<div class="card sbl-card p-4" style="max-width: 600px;">
+  <form method="post" enctype="multipart/form-data">
+    <div class="mb-3">
+      <label class="form-label">Project Name</label>
+      <input type="text" name="name" class="form-control" required>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Description</label>
+      <textarea name="description" class="form-control" rows="4"></textarea>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Upload Project (.zip) <span class="text-muted">— optional</span></label>
+      <input type="file" name="project_zip" accept=".zip" class="form-control">
+      <div class="form-text">Upload your entire project as a .zip and the system will scan it and report detected bugs automatically (max 50 MB).</div>
+    </div>
+    <button type="submit" class="btn btn-primary">Create Project</button>
+  </form>
+</div>
+{% endblock %}

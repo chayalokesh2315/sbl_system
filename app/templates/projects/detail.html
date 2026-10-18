@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}{{ project['name'] }} - SBL System{% endblock %}
+{% block content %}
+<h3 class="mb-1">{{ project['name'] }}</h3>
+<p class="text-muted">{{ project['description'] }}</p>
+
+<div class="row g-3">
+  <div class="col-md-8">
+    <div class="card sbl-card mb-3">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <span class="fw-semibold">Recent Bugs</span>
+        <span>
+          <a href="{{ url_for('projects.download_project', project_id=project['id']) }}" class="btn btn-sm btn-outline-success"><i class="bi bi-download"></i> Download Project</a>
+          {% if current_user['role'] in ['Admin','Manager'] %}
+          <a href="{{ url_for('projects.scan', project_id=project['id']) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-search"></i> Scan Project (.zip)</a>
+          {% endif %}
+          <a href="{{ url_for('bugs.new_bug') }}" class="btn btn-sm btn-primary">Report Bug</a>
+        </span>
+      </div>
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead class="table-light"><tr><th>Title</th><th>Status</th><th>Severity</th></tr></thead>
+          <tbody>
+            {% for b in bugs %}
+            <tr onclick="window.location='{{ url_for('bugs.detail', bug_id=b['id']) }}'" style="cursor:pointer">
+              <td>{{ b['title'] }}</td>
+              <td><span class="badge status-badge-{{ b['status'] }}">{{ b['status'] }}</span></td>
+              <td class="severity-{{ b['severity'] }}">{{ b['severity'] }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="3" class="text-center text-muted py-3">No bugs reported yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card sbl-card">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <span class="fw-semibold">Releases</span>
+        {% if current_user['role'] in ['Admin','Manager'] %}
+        <a href="{{ url_for('releases.new_release') }}" class="btn btn-sm btn-outline-primary">New Release</a>
+        {% endif %}
+      </div>
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead class="table-light"><tr><th>Version</th><th>Type</th><th>Status</th></tr></thead>
+          <tbody>
+            {% for r in releases %}
+            <tr onclick="window.location='{{ url_for('releases.detail', release_id=r['id']) }}'" style="cursor:pointer">
+              <td>{{ r['version_number'] }}</td>
+              <td>{{ r['release_type'] }}</td>
+              <td>{{ r['status'] }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="3" class="text-center text-muted py-3">No releases yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card sbl-card p-3">
+      <h6>Team Members</h6>
+      <ul class="list-group list-group-flush mb-3">
+        {% for m in members %}
+        <li class="list-group-item d-flex justify-content-between">
+          <span>{{ m['username'] }}</span>
+          <span class="badge bg-secondary">{{ m['project_role'] or m['role'] }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+
+      {% if current_user['role'] in ['Admin', 'Manager'] %}
+      <form method="post" action="{{ url_for('projects.add_member', project_id=project['id']) }}">
+        <div class="mb-2">
+          <select name="user_id" class="form-select form-select-sm" required>
+            <option value="" disabled selected>Add member...</option>
+            {% for u in all_users %}
+            <option value="{{ u['id'] }}">{{ u['username'] }} ({{ u['role'] }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="mb-2">
+          <input type="text" name="project_role" class="form-control form-control-sm" placeholder="Role on project (optional)">
+        </div>
+        <button class="btn btn-sm btn-outline-primary w-100">Add</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

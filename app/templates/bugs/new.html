@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}Report Bug - SBL System{% endblock %}
+{% block content %}
+<h3 class="mb-4">Report a New Bug</h3>
+<div class="card sbl-card p-4" style="max-width: 700px;">
+  {% if duplicates %}
+  <div class="alert alert-warning">
+    <strong><i class="bi bi-exclamation-triangle"></i> Possible duplicate{{ 's' if duplicates|length > 1 }} found</strong>
+    <ul class="mb-2 mt-2">
+      {% for d in duplicates %}
+      <li>
+        <a href="{{ url_for('bugs.detail', bug_id=d['id']) }}" target="_blank">{{ d['title'] }}</a>
+        <span class="badge bg-secondary">{{ d['status'] }}</span>
+        <span class="text-muted small">{{ d['percent'] }}% similar</span>
+      </li>
+      {% endfor %}
+    </ul>
+    <small>If yours is a different problem, use <strong>Submit anyway</strong> below.</small>
+  </div>
+  {% endif %}
+
+  <form method="post" enctype="multipart/form-data">
+    <div class="mb-3">
+      <label class="form-label">Project</label>
+      <select name="project_id" id="projectSelect" class="form-select" required>
+        <option value="" disabled {% if not form.get('project_id') %}selected{% endif %}>Select project...</option>
+        {% for p in projects %}
+        <option value="{{ p['id'] }}" {% if form.get('project_id')|string == p['id']|string %}selected{% endif %}>{{ p['name'] }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Title</label>
+      <input type="text" name="title" id="titleInput" class="form-control" value="{{ form.get('title', '') }}" required autocomplete="off">
+      <div id="dupPanel" class="mt-2" style="display:none;"></div>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Description</label>
+      <textarea name="description" id="descInput" class="form-control" rows="3">{{ form.get('description', '') }}</textarea>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Reproduction Steps</label>
+      <textarea name="reproduction_steps" class="form-control" rows="3" placeholder="1. ...&#10;2. ...&#10;3. ...">{{ form.get('reproduction_steps', '') }}</textarea>
+    </div>
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Severity</label>
+        <select name="severity" class="form-select">
+          {% for s in severities %}<option value="{{ s }}" {% if (form.get('severity') or 'Medium') == s %}selected{% endif %}>{{ s }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Priority</label>
+        <select name="priority" class="form-select">
+          {% for p in priorities %}<option value="{{ p }}" {% if (form.get('priority') or 'Medium') == p %}selected{% endif %}>{{ p }}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Attachment (screenshot / log file)</label>
+      <input type="file" name="attachment" class="form-control">
+    </div>
+    {% if duplicates %}
+    <button type="submit" name="force" value="1" class="btn btn-warning">Submit anyway</button>
+    {% else %}
+    <button type="submit" class="btn btn-primary">Submit Bug Report</button>
+    {% endif %}
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  const title = document.getElementById("titleInput");
+  const desc = document.getElementById("descInput");
+  const proj = document.getElementById("projectSelect");
+  const panel = document.getElementById("dupPanel");
+  let timer = null;
+
+  function render(items) {
+    panel.textContent = "";
+    if (!items.length) { panel.style.display = "none"; return; }
+    const box = document.createElement("div");
+    box.className = "alert alert-info py-2 mb-0 small";
+    const head = document.createElement("strong");
+    head.textContent = "Similar bugs already reported:";
+    box.appendChild(head);
+    const ul = document.createElement("ul");
+    ul.className = "mb-0 mt-1";
+    items.forEach(function (it) {
+      const li = document.createElement("li");
+      const a = document.createElement("a");
+      a.href = it.url; a.target = "_blank"; a.textContent = it.title;   // textContent => no XSS
+      li.appendChild(a);
+      li.appendChild(document.createTextNode(" (" + it.status + ", " + it.percent + "% similar)"));
+      ul.appendChild(li);
+    });
+    box.appendChild(ul);
+    panel.appendChild(box);
+    panel.style.display = "block";
+  }
+
+  function check() {
+    const q = new URLSearchParams({
+      title: title.value, description: desc.value, project_id: proj.value || ""
+    });
+    fetch("{{ url_for('bugs.check_duplicates') }}?" + q.toString())
+      .then(function (r) { return r.ok ? r.json() : []; })
+      .then(render)
+      .catch(function () { panel.style.display = "none"; });
+  }
+
+  function later() { clearTimeout(timer); timer = setTimeout(check, 400); }
+  title.addEventListener("input", later);
+  desc.addEventListener("input", later);
+  proj.addEventListener("change", later);
+})();
+</script>
+{% endblock %}

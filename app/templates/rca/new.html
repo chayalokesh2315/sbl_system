@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Root Cause Analysis - SBL System{% endblock %}
+{% block content %}
+<h3 class="mb-1">Root Cause Analysis</h3>
+<p class="text-muted mb-4">For bug: {{ bug['title'] }}</p>
+<div class="card sbl-card p-4" style="max-width: 700px;">
+  <div class="alert alert-light border d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+      <strong><i class="bi bi-stars"></i> AI-assisted analysis</strong>
+      <div class="small text-muted" id="aiHint">
+        {% if ai_enabled %}Gemini is connected. The bug text is sent to Google to generate the suggestion.
+        {% else %}Offline mode (rule-based). Set <code>SBL_AI_KEY</code> to use Gemini.{% endif %}
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      <button type="button" class="btn btn-outline-secondary btn-sm" id="offlineBtn">Use offline suggestion</button>
+      <button type="button" class="btn btn-outline-primary btn-sm" id="suggestBtn">Suggest Root Cause &amp; Fix</button>
+    </div>
+  </div>
+  <div id="aiResult" class="small mb-3" style="display:none;"></div>
+
+  <form method="post">
+    <div class="mb-3">
+      <label class="form-label">Category</label>
+      <select name="category" id="f_category" class="form-select">
+        {% for c in categories %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Root Cause</label>
+      <textarea name="root_cause" id="f_root_cause" class="form-control" rows="3" required></textarea>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Preventive Action</label>
+      <textarea name="preventive_action" id="f_preventive" class="form-control" rows="2"></textarea>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Technical Recommendation</label>
+      <textarea name="technical_recommendation" id="f_recommendation" class="form-control" rows="2"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Save Analysis</button>
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  const btn = document.getElementById("suggestBtn");
+  const out = document.getElementById("aiResult");
+  const f = {
+    category: document.getElementById("f_category"),
+    root_cause: document.getElementById("f_root_cause"),
+    preventive_action: document.getElementById("f_preventive"),
+    technical_recommendation: document.getElementById("f_recommendation")
+  };
+
+  function message(text, cls) {
+    out.textContent = "";
+    const d = document.createElement("div");
+    d.className = "alert " + cls + " py-2 mb-0";
+    d.textContent = text;                       // textContent => safe
+    out.appendChild(d);
+    out.style.display = "block";
+  }
+
+  function hasText() {
+    return f.root_cause.value.trim() || f.preventive_action.value.trim() || f.technical_recommendation.value.trim();
+  }
+
+  const offlineBtn = document.getElementById("offlineBtn");
+  const CLIENT_TIMEOUT_MS = 35000;
+
+  function setBusy(busy) {
+    btn.disabled = busy; offlineBtn.disabled = busy;
+    btn.textContent = busy ? "Analysing..." : "Suggest Root Cause & Fix";
+  }
+
+  function run(offline) {
+    if (hasText() && !confirm("Replace what you have typed with the suggestion?")) return;
+    setBusy(true);
+    const ctrl = new AbortController();
+    const timer = setTimeout(function () { ctrl.abort(); }, CLIENT_TIMEOUT_MS);
+    const body = new URLSearchParams();
+    if (offline === true) body.set("offline", "1");
+    fetch("{{ url_for('rca.suggest', bug_id=bug['id']) }}", { method: "POST", body: body, signal: ctrl.signal })
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, body: j }; }); })
+      .then(function (res) {
+        if (!res.ok) { message(res.body.error || "Could not get a suggestion.", "alert-danger"); return; }
+        const s = res.body;
+        Array.prototype.forEach.call(f.category.options, function (o) { if (o.value === s.category) f.category.value = o.value; });
+        f.root_cause.value = s.root_cause || "";
+        f.preventive_action.value = s.preventive_action || "";
+        f.technical_recommendation.value = s.technical_recommendation || "";
+        const label = s.source === "gemini" ? "AI suggestion (Gemini)" : "Rule-based suggestion";
+        message(label + " filled in below. " + s.note + " Review and edit before saving, it can be wrong.",
+                s.source === "gemini" ? "alert-success" : "alert-info");
+      })
+      .catch(function (err) {
+        if (err && err.name === "AbortError") {
+          message("Gemini is taking too long. Click \"Use offline suggestion\" to get an instant answer, or try again.", "alert-warning");
+        } else {
+          message("Could not reach the server. Try again.", "alert-danger");
+        }
+      })
+      .finally(function () { clearTimeout(timer); setBusy(false); });
+  }
+
+  btn.addEventListener("click", function () { run(false); });
+  offlineBtn.addEventListener("click", function () { run(true); });
+  if (new URLSearchParams(window.location.search).get("suggest") === "1") run(false);
+})();
+</script>
+{% endblock %}

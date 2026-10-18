@@ -1,0 +1,62 @@
+:root {
+  --sbl-primary: #2b3a67;
+  --sbl-accent: #4a90a4;
+}
+
+body {
+  background-color: #f4f6f9;
+}
+
+.sbl-navbar {
+  background: linear-gradient(90deg, var(--sbl-primary), var(--sbl-accent));
+}
+
+.sbl-role-badge {
+  background-color: rgba(255,255,255,0.2);
+}
+
+.sbl-card {
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+}
+
+.sbl-stat-card {
+  border-radius: 12px;
+  color: white;
+  padding: 1.25rem;
+}
+
+.sbl-stat-card h2 { font-weight: 700; margin-bottom: 0; }
+.sbl-stat-card p { margin-bottom: 0; opacity: 0.85; }
+
+.bg-sbl-1 { background: linear-gradient(135deg, #2b3a67, #4a90a4); }
+.bg-sbl-2 { background: linear-gradient(135deg, #c0392b, #e67e22); }
+.bg-sbl-3 { background: linear-gradient(135deg, #27ae60, #2ecc71); }
+.bg-sbl-4 { background: linear-gradient(135deg, #8e44ad, #9b59b6); }
+
+.status-badge-New { background-color: #6c757d; }
+.status-badge-Assigned { background-color: #0d6efd; }
+.status-badge-In\ Progress { background-color: #fd7e14; }
+.status-badge-Fixed { background-color: #6610f2; }
+.status-badge-Testing { background-color: #20c997; }
+.status-badge-Closed { background-color: #198754; }
+
+.severity-Critical { color: #dc3545; font-weight: 600; }
+.severity-High { color: #fd7e14; font-weight: 600; }
+.severity-Medium { color: #0d6efd; }
+.severity-Low { color: #6c757d; }
+
+.login-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--sbl-primary), var(--sbl-accent));
+}
+
+.login-card {
+  border-radius: 14px;
+  max-width: 420px;
+  width: 100%;
+}

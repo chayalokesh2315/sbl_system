@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}{{ article['title'] }} - SBL System{% endblock %}
+{% block content %}
+<h3>{{ article['title'] }}</h3>
+<p class="text-muted">By {{ article['username'] or 'Unknown' }} &middot; {{ article['created_at'] }}</p>
+<div class="card sbl-card p-4">
+  <h6>Problem</h6>
+  <p>{{ article['problem_summary'] or '—' }}</p>
+  <h6>Solution</h6>
+  <p style="white-space: pre-line;">{{ article['solution'] }}</p>
+  {% if article['tags'] %}<p><i class="bi bi-tags"></i> {{ article['tags'] }}</p>{% endif %}
+</div>
+{% endblock %}

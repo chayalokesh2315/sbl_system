@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Root Cause Analysis - SBL System{% endblock %}
+{% block content %}
+<h3 class="mb-4">Root Cause Analysis History</h3>
+<div class="card sbl-card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead class="table-light"><tr><th>Bug</th><th>Category</th><th>Root Cause</th><th>Recorded</th></tr></thead>
+      <tbody>
+        {% for r in rows %}
+        <tr onclick="window.location='{{ url_for('bugs.detail', bug_id=r['bug_id']) }}'" style="cursor:pointer">
+          <td>{{ r['bug_title'] }}</td>
+          <td>{{ r['category'] }}</td>
+          <td>{{ r['root_cause'][:80] }}{% if r['root_cause']|length > 80 %}...{% endif %}</td>
+          <td>{{ r['created_at'] }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="text-center text-muted py-3">No root cause analyses recorded yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

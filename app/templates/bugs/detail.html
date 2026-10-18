@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}{{ bug['title'] }} - SBL System{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-3">
+  <div>
+    <h3 class="mb-1">{{ bug['title'] }}</h3>
+    <p class="text-muted mb-0">{{ bug['project_name'] }} &middot; Reported by {{ bug['reporter_name'] }}</p>
+  </div>
+  <span class="badge status-badge-{{ bug['status'] }} fs-6">{{ bug['status'] }}</span>
+</div>
+
+<div class="row g-3">
+  <div class="col-md-8">
+    <div class="card sbl-card p-3 mb-3">
+      <h6>Description</h6>
+      <p>{{ bug['description'] or '—' }}</p>
+      <h6>Reproduction Steps</h6>
+      <p style="white-space: pre-line;">{{ bug['reproduction_steps'] or '—' }}</p>
+      {% if bug['attachment_path'] %}
+      <h6>Attachment</h6>
+      <a href="{{ url_for('static', filename='uploads/' + bug['attachment_path']) }}" target="_blank">
+        <i class="bi bi-paperclip"></i> {{ bug['attachment_path'] }}
+      </a>
+      {% endif %}
+    </div>
+
+    <div class="card sbl-card p-3 mb-3">
+      <h6>Root Cause Analysis</h6>
+      {% for r in rca %}
+      <div class="border rounded p-2 mb-2">
+        <strong>{{ r['category'] }}</strong>
+        <p class="mb-1">{{ r['root_cause'] }}</p>
+        {% if r['preventive_action'] %}<p class="mb-1 text-muted"><em>Preventive action:</em> {{ r['preventive_action'] }}</p>{% endif %}
+        {% if r['technical_recommendation'] %}<p class="mb-0 text-muted"><em>Recommendation:</em> {{ r['technical_recommendation'] }}</p>{% endif %}
+      </div>
+      {% else %}
+      <p class="text-muted">No root cause analysis recorded yet.</p>
+      {% endfor %}
+      <a href="{{ url_for('rca.new', bug_id=bug['id']) }}" class="btn btn-sm btn-outline-primary">Add Root Cause Analysis</a>
+      <a href="{{ url_for('rca.new', bug_id=bug['id'], suggest=1) }}" class="btn btn-sm btn-primary"><i class="bi bi-stars"></i> Suggest Root Cause &amp; Fix</a>
+    </div>
+
+    <div class="card sbl-card p-3 mb-3">
+      <h6><i class="bi bi-lightbulb"></i> Similar Bugs &amp; Past Solutions</h6>
+      {% for sb in similar_bugs %}
+      <div class="border rounded p-2 mb-2">
+        <div class="d-flex justify-content-between">
+          <a href="{{ url_for('bugs.detail', bug_id=sb['id']) }}">{{ sb['title'] }}</a>
+          <span class="text-muted small">{{ sb['percent'] }}% match</span>
+        </div>
+        <div class="small text-muted">{{ sb['project_name'] }} &middot; <span class="badge status-badge-{{ sb['status'] }}">{{ sb['status'] }}</span></div>
+        {% if sb['rca'] %}
+        <div class="small mt-1"><strong>Past root cause ({{ sb['rca']['category'] }}):</strong> {{ sb['rca']['root_cause'] }}</div>
+        {% if sb['rca']['preventive_action'] %}<div class="small text-muted"><em>Prevention:</em> {{ sb['rca']['preventive_action'] }}</div>{% endif %}
+        {% if sb['rca']['technical_recommendation'] %}<div class="small text-muted"><em>Fix recommended:</em> {{ sb['rca']['technical_recommendation'] }}</div>{% endif %}
+        {% endif %}
+      </div>
+      {% endfor %}
+      {% for k in similar_kb %}
+      <div class="border rounded p-2 mb-2 bg-light">
+        <div class="d-flex justify-content-between">
+          <a href="{{ url_for('kb.detail', article_id=k['id']) }}"><i class="bi bi-journal-text"></i> {{ k['title'] }}</a>
+          <span class="text-muted small">{{ k['percent'] }}% match</span>
+        </div>
+        <div class="small">{{ k['solution'][:200] }}{% if k['solution']|length > 200 %}&hellip;{% endif %}</div>
+      </div>
+      {% endfor %}
+      {% if not similar_bugs and not similar_kb %}
+      <p class="text-muted mb-0">No similar bugs or knowledge-base articles found.</p>
+      {% endif %}
+    </div>
+
+    <div class="card sbl-card p-3">
+      <h6>Comments</h6>
+      {% for c in comments %}
+      <div class="mb-2">
+        <strong>{{ c['username'] }}</strong> <span class="text-muted small">{{ c['created_at'] }}</span>
+        <p class="mb-0">{{ c['comment'] }}</p>
+      </div>
+      {% else %}
+      <p class="text-muted">No comments yet.</p>
+      {% endfor %}
+      <form method="post" action="{{ url_for('bugs.add_comment', bug_id=bug['id']) }}" class="mt-2">
+        <div class="input-group">
+          <input type="text" name="comment" class="form-control" placeholder="Add a comment..." required>
+          <button class="btn btn-outline-primary">Post</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card sbl-card p-3 mb-3">
+      <h6>Details</h6>
+      <p class="mb-1"><strong>Severity:</strong> <span class="severity-{{ bug['severity'] }}">{{ bug['severity'] }}</span></p>
+      <p class="mb-1"><strong>Priority:</strong> {{ bug['priority'] }}</p>
+      <p class="mb-1"><strong>Assigned to:</strong> {{ bug['assignee_name'] or 'Unassigned' }}</p>
+      <p class="mb-1"><strong>Assigned tester:</strong> {{ bug['tester_name'] or 'Not assigned' }}</p>
+      {% if bug['reopen_count'] %}<p class="mb-1"><strong>Reopened:</strong> <span class="badge bg-danger">{{ bug['reopen_count'] }}&times;</span></p>{% endif %}
+      <p class="mb-0"><strong>Last updated:</strong> {{ bug['updated_at'] }}</p>
+    </div>
+
+    <div class="card sbl-card p-3 mb-3">
+      <h6>Assign</h6>
+      <form method="post" action="{{ url_for('bugs.assign', bug_id=bug['id']) }}">
+        <select name="assigned_to" class="form-select mb-2" required>
+          <option value="" disabled selected>Select developer...</option>
+          {% for d in devs %}
+          <option value="{{ d['id'] }}">{{ d['username'] }}</option>
+          {% endfor %}
+        </select>
+        <button class="btn btn-sm btn-outline-primary w-100">Assign</button>
+      </form>
+    </div>
+
+    {% if current_user['role'] in ['Admin', 'Manager'] %}
+    <div class="card sbl-card p-3 mb-3">
+      <h6>Assign Tester</h6>
+      <form method="post" action="{{ url_for('bugs.assign_tester', bug_id=bug['id']) }}">
+        <select name="assigned_tester" class="form-select mb-2" required>
+          <option value="" disabled selected>Select tester...</option>
+          {% for t in testers %}
+          <option value="{{ t['id'] }}" {% if t['id'] == bug['assigned_tester'] %}selected{% endif %}>{{ t['username'] }}</option>
+          {% endfor %}
+        </select>
+        <button class="btn btn-sm btn-outline-primary w-100">Assign Tester</button>
+      </form>
+      {% if not testers %}
+      <small class="text-muted">No testers in this project yet. Add one under Team Members first.</small>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="card sbl-card p-3 mb-3">
+      <h6>Update Status</h6>
+      <form method="post" action="{{ url_for('bugs.update_status', bug_id=bug['id']) }}">
+        <select name="status" class="form-select mb-2">
+          {% for s in statuses %}
+          <option value="{{ s }}" {% if s == bug['status'] %}selected{% endif %}>{{ s }}</option>
+          {% endfor %}
+        </select>
+        <button class="btn btn-sm btn-primary w-100">Update</button>
+      </form>
+    </div>
+
+    <div class="card sbl-card p-3">
+      <h6>Activity Log</h6>
+      <ul class="list-unstyled small">
+        {% for a in activity %}
+        <li class="mb-1 text-muted"><i class="bi bi-clock-history"></i> {{ a['action'] }} <br><span class="text-black-50">{{ a['created_at'] }}</span></li>
+        {% else %}
+        <li class="text-muted">No activity yet.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

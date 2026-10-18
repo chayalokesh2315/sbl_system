@@ -1,0 +1,295 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - SBL System{% endblock %}
+
+{% block content %}
+<h3 class="mb-4">
+  Welcome, {{ current_user['username'] }}
+  <span class="text-muted fs-6">({{ current_user['role'] }})</span>
+</h3>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="sbl-stat-card bg-sbl-1"><p>Total Bugs</p><h2>{{ total_bugs }}</h2></div>
+  </div>
+  <div class="col-md-3">
+    <div class="sbl-stat-card bg-sbl-2"><p>Open Bugs</p><h2>{{ open_bugs }}</h2></div>
+  </div>
+  <div class="col-md-3">
+    <div class="sbl-stat-card bg-sbl-3"><p>Closed Bugs</p><h2>{{ closed_bugs }}</h2></div>
+  </div>
+  <div class="col-md-3">
+    <div class="sbl-stat-card bg-sbl-4"><p>Projects</p><h2>{{ total_projects }}</h2></div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="sbl-stat-card bg-sbl-2"><p>Avg Time to Fix</p><h2>{{ avg_fix_text }}</h2></div>
+  </div>
+  <div class="col-md-4">
+    <div class="sbl-stat-card bg-sbl-3"><p>Reopened Bugs</p><h2>{{ reopened_total }}</h2></div>
+  </div>
+  <div class="col-md-4">
+    <div class="sbl-stat-card bg-sbl-1"><p>RCA Coverage (fixed bugs)</p><h2>{{ rca_coverage }}</h2></div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="card sbl-card p-3">
+      <h6 class="mb-2">Bugs by Status</h6>
+      <div style="height:240px; position:relative;">
+        <canvas id="statusChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card sbl-card p-3">
+      <h6 class="mb-2">Bugs by Severity</h6>
+      <div style="height:240px; position:relative;">
+        <canvas id="severityChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card sbl-card p-3">
+      <h6 class="mb-2">Top Resolvers</h6>
+      <div style="height:240px; position:relative;">
+        <canvas id="resolverChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-12">
+    <div class="card sbl-card p-3">
+      <h6 class="mb-2">Bug Report Trend (last 14 days)</h6>
+      <div style="height:220px; position:relative;">
+        <canvas id="trendChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="card sbl-card p-3">
+      <h6 class="mb-2">Avg Hours to Fix by Severity</h6>
+      <div style="height:240px; position:relative;"><canvas id="ttfChart"></canvas></div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card sbl-card p-3">
+      <h6 class="mb-2">Bugs by Root-Cause Category</h6>
+      <div style="height:240px; position:relative;"><canvas id="rcaChart"></canvas></div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card sbl-card p-3">
+      <h6 class="mb-2">Open Workload per Developer</h6>
+      <div style="height:240px; position:relative;"><canvas id="workloadChart"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-6">
+    <div class="card sbl-card p-3">
+      <h6 class="mb-2">Bugs Included per Release</h6>
+      <div style="height:240px; position:relative;"><canvas id="releaseChart"></canvas></div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card sbl-card p-3">
+      <h6 class="mb-2">Most Reopened Bugs</h6>
+      <table class="table table-sm mb-0">
+        <thead><tr><th>Bug</th><th>Status</th><th>Reopened</th></tr></thead>
+        <tbody>
+          {% for b in reopened_bugs %}
+          <tr onclick="window.location='{{ url_for('bugs.detail', bug_id=b['id']) }}'" style="cursor:pointer">
+            <td>{{ b['title'] }}</td>
+            <td><span class="badge status-badge-{{ b['status'] }}">{{ b['status'] }}</span></td>
+            <td>{{ b['reopen_count'] }}&times;</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="3" class="text-muted text-center py-3">No bugs have been reopened.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="card sbl-card">
+  <div class="card-header bg-white fw-semibold">Recently Updated Bugs</div>
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Title</th><th>Project</th><th>Status</th><th>Severity</th><th>Updated</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b in recent_bugs %}
+        <tr onclick="window.location='{{ url_for('bugs.detail', bug_id=b['id']) }}'" style="cursor:pointer">
+          <td>{{ b['title'] }}</td>
+          <td>{{ b['project_name'] }}</td>
+          <td><span class="badge status-badge-{{ b['status'] }}">{{ b['status'] }}</span></td>
+          <td class="severity-{{ b['severity'] }}">{{ b['severity'] }}</td>
+          <td>{{ b['updated_at'] }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="text-center text-muted py-3">No bugs yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Local Chart.js: works even when CDN/internet is unavailable -->
+<script src="{{ url_for('static', filename='js/chart.umd.min.js') }}"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  if (typeof Chart === "undefined") {
+    console.error("Chart.js could not be loaded from the local static file.");
+    return;
+  }
+
+  const data = {{ chart_data | safe }};
+
+  new Chart(document.getElementById("statusChart"), {
+    type: "doughnut",
+    data: {
+      labels: data.status_labels,
+      datasets: [{
+        data: data.status_counts,
+        backgroundColor: ["#6c757d", "#0d6efd", "#fd7e14", "#6610f2", "#20c997", "#198754"],
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: "bottom",
+          labels: { boxWidth: 12, padding: 10, font: { size: 11 } }
+        }
+      }
+    }
+  });
+
+  new Chart(document.getElementById("severityChart"), {
+    type: "bar",
+    data: {
+      labels: data.severity_labels,
+      datasets: [{
+        label: "Bugs",
+        data: data.severity_counts,
+        backgroundColor: "#4a90a4",
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 11 } } },
+        x: { ticks: { font: { size: 11 } } }
+      },
+      plugins: { legend: { display: false } }
+    }
+  });
+
+  new Chart(document.getElementById("resolverChart"), {
+    type: "bar",
+    data: {
+      labels: data.resolver_labels,
+      datasets: [{
+        label: "Resolved",
+        data: data.resolver_counts,
+        backgroundColor: "#2b3a67",
+        borderWidth: 0
+      }]
+    },
+    options: {
+      indexAxis: "y",
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 11 } } },
+        y: { ticks: { font: { size: 11 } } }
+      },
+      plugins: { legend: { display: false } }
+    }
+  });
+
+  new Chart(document.getElementById("ttfChart"), {
+    type: "bar",
+    data: { labels: data.ttf_labels,
+            datasets: [{ label: "Hours", data: data.ttf_hours, backgroundColor: "#e67e22", borderWidth: 0 }] },
+    options: { responsive: true, maintainAspectRatio: false,
+      scales: { y: { beginAtZero: true, ticks: { font: { size: 11 } } }, x: { ticks: { font: { size: 11 } } } },
+      plugins: { legend: { display: false } } }
+  });
+
+  new Chart(document.getElementById("rcaChart"), {
+    type: "doughnut",
+    data: { labels: data.rca_labels,
+            datasets: [{ data: data.rca_counts, borderWidth: 1,
+              backgroundColor: ["#2b3a67", "#4a90a4", "#e67e22", "#6610f2", "#20c997", "#fd7e14", "#198754", "#6c757d", "#d63384"] }] },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: "bottom", labels: { boxWidth: 12, padding: 8, font: { size: 10 } } } } }
+  });
+
+  new Chart(document.getElementById("workloadChart"), {
+    type: "bar",
+    data: { labels: data.workload_labels,
+            datasets: [{ label: "Open bugs", data: data.workload_counts, backgroundColor: "#4a90a4", borderWidth: 0 }] },
+    options: { indexAxis: "y", responsive: true, maintainAspectRatio: false,
+      scales: { x: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 11 } } }, y: { ticks: { font: { size: 11 } } } },
+      plugins: { legend: { display: false } } }
+  });
+
+  new Chart(document.getElementById("releaseChart"), {
+    type: "bar",
+    data: { labels: data.release_labels,
+            datasets: [{ label: "Bugs", data: data.release_counts, backgroundColor: "#198754", borderWidth: 0 }] },
+    options: { responsive: true, maintainAspectRatio: false,
+      scales: { y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 11 } } }, x: { ticks: { font: { size: 10 } } } },
+      plugins: { legend: { display: false } } }
+  });
+
+  new Chart(document.getElementById("trendChart"), {
+    type: "line",
+    data: {
+      labels: data.trend_labels,
+      datasets: [{
+        label: "Bugs Reported",
+        data: data.trend_counts,
+        borderColor: "#e67e22",
+        backgroundColor: "rgba(230, 126, 34, 0.08)",
+        tension: 0.3,
+        fill: true,
+        pointRadius: 3,
+        pointHoverRadius: 5
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 11 } } },
+        x: { ticks: { font: { size: 10 }, maxRotation: 0 } }
+      },
+      plugins: { legend: { display: false } }
+    }
+  });
+});
+</script>
+{% endblock %}

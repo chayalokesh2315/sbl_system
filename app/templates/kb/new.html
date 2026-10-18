@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}New Article - SBL System{% endblock %}
+{% block content %}
+<h3 class="mb-4">New Knowledge Base Article</h3>
+<div class="card sbl-card p-4" style="max-width: 700px;">
+  <form method="post">
+    {% if bug_id %}<input type="hidden" name="bug_id" value="{{ bug_id }}">{% endif %}
+    <div class="mb-3">
+      <label class="form-label">Title</label>
+      <input type="text" name="title" class="form-control" required>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Problem Summary</label>
+      <textarea name="problem_summary" class="form-control" rows="2"></textarea>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Solution / Resolution Steps</label>
+      <textarea name="solution" class="form-control" rows="4" required></textarea>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Tags (comma-separated)</label>
+      <input type="text" name="tags" class="form-control" placeholder="e.g. login, database, timeout">
+    </div>
+    <button type="submit" class="btn btn-primary">Save Article</button>
+  </form>
+</div>
+{% endblock %}

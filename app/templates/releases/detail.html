@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}{{ release['version_number'] }} - SBL System{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-3">
+  <div>
+    <h3 class="mb-1">{{ release['version_number'] }} <span class="badge bg-secondary">{{ release['release_type'] }}</span></h3>
+    <p class="text-muted mb-0">{{ release['project_name'] }}</p>
+  </div>
+  <span class="badge bg-primary fs-6">{{ release['status'] }}</span>
+</div>
+
+<div class="row g-3">
+  <div class="col-md-8">
+    <div class="card sbl-card p-3 mb-3">
+      <h6>Release Notes</h6>
+      <p style="white-space: pre-line;">{{ release['release_notes'] or '—' }}</p>
+    </div>
+
+    <div class="card sbl-card p-3 mb-3">
+      <h6>Bugs Included in this Release</h6>
+      <ul class="list-group list-group-flush mb-3">
+        {% for b in included_bugs %}
+        <li class="list-group-item d-flex justify-content-between">
+          <a href="{{ url_for('bugs.detail', bug_id=b['id']) }}">{{ b['title'] }}</a>
+          <span class="badge status-badge-{{ b['status'] }}">{{ b['status'] }}</span>
+        </li>
+        {% else %}
+        <li class="list-group-item text-muted">No bugs added yet.</li>
+        {% endfor %}
+      </ul>
+
+      {% if current_user['role'] in ['Admin','Manager'] and fixed_bugs %}
+      <form method="post" action="{{ url_for('releases.add_bug', release_id=release['id']) }}" class="d-flex gap-2">
+        <select name="bug_id" class="form-select form-select-sm" required>
+          <option value="" disabled selected>Add a fixed bug...</option>
+          {% for b in fixed_bugs %}<option value="{{ b['id'] }}">{{ b['title'] }}</option>{% endfor %}
+        </select>
+        <button class="btn btn-sm btn-outline-primary">Add</button>
+      </form>
+      {% endif %}
+    </div>
+
+    <div class="card sbl-card p-3">
+      <h6>Deployments</h6>
+      <ul class="list-group list-group-flush mb-3">
+        {% for d in deployments %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          <span>{{ d['environment'] }} &middot; {{ d['deployed_at'] }}</span>
+          <span>
+            {% if d['verified'] %}<span class="badge bg-success">Verified</span>{% else %}<span class="badge bg-warning text-dark">Pending</span>{% endif %}
+            <a href="{{ url_for('deploy.detail', deployment_id=d['id']) }}" class="btn btn-sm btn-outline-secondary ms-2">View</a>
+          </span>
+        </li>
+        {% else %}
+        <li class="list-group-item text-muted">No deployments recorded yet.</li>
+        {% endfor %}
+      </ul>
+      {% if current_user['role'] in ['Admin','Manager','Developer'] %}
+      <a href="{{ url_for('deploy.new_deployment', release_id=release['id']) }}" class="btn btn-sm btn-primary">Record Deployment</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    {% if current_user['role'] in ['Admin','Manager'] %}
+    <div class="card sbl-card p-3">
+      <h6>Update Status</h6>
+      <form method="post" action="{{ url_for('releases.update_status', release_id=release['id']) }}">
+        <select name="status" class="form-select mb-2">
+          {% for s in statuses %}
+          <option value="{{ s }}" {% if s == release['status'] %}selected{% endif %}>{{ s }}</option>
+          {% endfor %}
+        </select>
+        <button class="btn btn-sm btn-primary w-100">Update</button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
